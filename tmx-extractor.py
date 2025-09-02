@@ -10,16 +10,15 @@ def main():
         inputFileName = os.path.basename(inputFile)[:-4]
         inputSize = os.path.getsize(inputFile)
         
-        # ansi encoding works best here
-        with open(inputFile, encoding="ansi", errors="ignore") as tmxfile:
+        with open(inputFile, "rb") as tmxfile:
             # Get the TMX files offset and the starting offset
             tmxfile.seek(88)
-            packageFilesInfoOffset = int(flip4ByteEndian(tmxfile.read(4).encode("ansi").hex()),16)
-            packageFilesOffset = int(flip4ByteEndian(tmxfile.read(4).encode("ansi").hex()),16)
+            packageFilesInfoOffset = int(flip4ByteEndian(tmxfile.read(4).hex()),16)
+            packageFilesOffset = int(flip4ByteEndian(tmxfile.read(4).hex()),16)
             
             # Parse the TMX files info and get the offsets of each currentFile
             tmxfile.seek(packageFilesInfoOffset)
-            packageFilesInfoString = tmxfile.read(packageFilesOffset - packageFilesInfoOffset).encode("ansi").hex()
+            packageFilesInfoString = tmxfile.read(packageFilesOffset - packageFilesInfoOffset).hex()
             packageFilesInfo = list()
             while (packageFilesInfoString != ''):
                 # 204e4947 = NIG. I'm sorry
@@ -42,7 +41,8 @@ def main():
                 currentFileType =  list(currentFileInfo.keys())[0]
                 
                 currentFileName = inputFileName + "-" + str(i) + "." + currentFileType
-                with open( currentFileName, 'w', encoding="ansi") as currentFile:
+                
+                with open( currentFileName, 'wb') as currentFile:
                     
                     tmxfile.seek(currentFileInfo[currentFileType])
                     
@@ -51,11 +51,13 @@ def main():
                     else:
                         currentFileLength = list(nextFileInfo.values())[0] - currentFileInfo[currentFileType]
                         
-                    content = tmxfile.read(currentFileLength)
+                    content = bytes.fromhex(tmxfile.read(currentFileLength).hex())
                     
                     currentFile.write(content)
+                    
                 currentFile.close()
                 print(currentFileName + " exported!")
+                
                         
         tmxfile.close()
 
